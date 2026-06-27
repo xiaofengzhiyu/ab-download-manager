@@ -83,6 +83,12 @@ fun main(args: Array<String>) {
             writeToConsole = true,
             logFilePath = AppInfo.definedPaths.logDir,
         )
+        // Fix: Set JNA temp directory to app's data dir to avoid issues with RamDisk/TEMP
+        // JNA needs to extract native DLL (jnidispatch.dll) to a writable temp directory
+        val jnaTmpDir = AppInfo.definedPaths.systemDir.resolve("jna_tmp").toFile()
+        jnaTmpDir.mkdirs()
+        System.setProperty("jna.tmpdir", jnaTmpDir.absolutePath)
+        appLogger.i { "DIAGNOSTIC: Set jna.tmpdir = ${jnaTmpDir.absolutePath}" }
         // Diagnostic: print TEMP-related info at startup
         appLogger.i { "=== DIAGNOSTIC: Environment Variables ===" }
         appLogger.i { "java.io.tmpdir = ${System.getProperty("java.io.tmpdir")}" }
