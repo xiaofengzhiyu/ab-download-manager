@@ -1,0 +1,77 @@
+name: Build Debug Package
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JBR
+        uses: actions/setup-java@v4
+        with:
+          distribution: "jetbrains"
+          java-package: "jdk"
+          java-version: "25"
+          check-latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache Gradle Dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: windows-gradle-debug
+          enableCrossOsArchive: true
+
+      - name: Skip Android build
+        shell: bash
+        run: |
+          echo "SKIP_ANDROID_BUILD=true" >> $GITHUB_ENV
+
+      - name: Initialize Gradle
+        shell: bash
+        run: |
+          ./gradlew
+
+      - name: Build portable distributable
+        shell: bash
+        run: |
+          ./gradlew :desktop:app:createReleaseDistributable
+
+      - name: Get version
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(./gradlew :shared:app:printAppVersion -q 2>/dev/null || echo "dev")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create zip archive
+        shell: bash
+        run: |
+          cd desktop/app/build/compose/binaries/main-release/app
+          ls -la
+          # The distributable folder name
+          APP_DIR=$(ls -d */ 2>/dev/null | head -1 | sed 's/\/$//')
+          echo "App directory: $APP_DIR"
+          7z a -tzip "${{ github.workspace }}/ABDownloadManager-debug-windows.zip" "$APP_DIR"
+
+      - name: Stop Gradle
+        shell: bash
+        run: |
+          ./gradlew -stop
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ABDownloadManager-debug-windows
+          path: ABDownloadManager-debug-windows.zip
+          retention-days: 14
