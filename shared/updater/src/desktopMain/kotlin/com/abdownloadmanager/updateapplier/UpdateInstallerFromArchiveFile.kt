@@ -1,6 +1,5 @@
 package com.abdownloadmanager.updateapplier
 
-import ir.amirab.util.logger.appLogger
 import ir.amirab.util.platform.Platform
 import okio.FileSystem
 import okio.Path.Companion.toPath
@@ -45,10 +44,7 @@ class UpdateInstallerFromArchiveFile(
         val scriptContent = FileSystem.RESOURCES.source(scriptForPlatform).buffer().use {
             it.readUtf8()
         }
-        val systemTempDir = FileSystem.SYSTEM_TEMPORARY_DIRECTORY
-        appLogger.i { "DIAGNOSTIC: UpdateInstaller - SYSTEM_TEMPORARY_DIRECTORY=$systemTempDir" }
-        appLogger.i { "DIAGNOSTIC: UpdateInstaller - java.io.tmpdir=${System.getProperty("java.io.tmpdir")}" }
-        val scriptPathInTempFolder = systemTempDir.resolve(
+        val scriptPathInTempFolder = FileSystem.SYSTEM_TEMPORARY_DIRECTORY.resolve(
             "abdm-updater.$scriptExtension"
         )
         scriptPathInTempFolder.toFile().writeText(scriptContent)

@@ -72,39 +72,50 @@ class App : AutoCloseable,
     }
 }
 
+/**
+ * Ensure java.io.tmpdir is writable.
+ *
+ * On Windows, when launched via jpackage native launcher (.exe), the process security
+ * context may differ from a direct `java.exe` invocation. This can cause File.canWrite()
+ * to return false for directories on RamDisk or network drives, even though the directory
+ * exists and is readable.
+ *
+ * This function checks if the current java.io.tmpdir is writable, and if not, falls back
+ * to a directory under the app's data folder.
+ */
+private fun ensureTmpDirIsWritable() {
+    val tmpDir = java.io.File(System.getProperty("java.io.tmpdir"))
+    if (tmpDir.canWrite()) return
+
+    // java.io.tmpdir is not writable, fall back to app data dir
+    val fallbackTmpDir = AppInfo.definedPaths.systemDir.resolve("tmp").toFile()
+    fallbackTmpDir.mkdirs()
+    if (fallbackTmpDir.canWrite()) {
+        System.setProperty("java.io.tmpdir", fallbackTmpDir.absolutePath)
+        // Also set jna.tmpdir explicitly for JNA (belt and suspenders)
+        System.setProperty("jna.tmpdir", fallbackTmpDir.absolutePath)
+    }
+}
+
 
 fun main(args: Array<String>) {
     try {
+        // Ensure java.io.tmpdir is writable before anything else.
+        // On Windows, jpackage native launcher may start the JVM with a security context
+        // where File.canWrite() returns false for RamDisk/network TEMP directories,
+        // even though the directory exists and is readable.
+        // See: https://github.com/amir1376/ab-download-manager/issues/XXX
+        ensureTmpDirIsWritable()
+
         AppArguments.init(args)
         AppProperties.boot()
         val appArguments = AppArguments.get()
-        // TODO: Remove forced logging after debugging TEMP/TitleBarDirection issues
         AppLogger.init(
-            writeToConsole = true,
-            logFilePath = AppInfo.definedPaths.logDir,
+            writeToConsole = false,
+            logFilePath = AppInfo.definedPaths.logDir.takeIf {
+                AppInfo.isInDebugMode()
+            },
         )
-        // Fix: Set JNA temp directory to app's data dir to avoid issues with RamDisk/TEMP
-        // JNA needs to extract native DLL (jnidispatch.dll) to a writable temp directory
-        val jnaTmpDir = AppInfo.definedPaths.systemDir.resolve("jna_tmp").toFile()
-        jnaTmpDir.mkdirs()
-        System.setProperty("jna.tmpdir", jnaTmpDir.absolutePath)
-        appLogger.i { "DIAGNOSTIC: Set jna.tmpdir = ${jnaTmpDir.absolutePath}" }
-        // Diagnostic: print TEMP-related info at startup
-        appLogger.i { "=== DIAGNOSTIC: Environment Variables ===" }
-        appLogger.i { "java.io.tmpdir = ${System.getProperty("java.io.tmpdir")}" }
-        appLogger.i { "TMP env = ${System.getenv("TMP")}" }
-        appLogger.i { "TEMP env = ${System.getenv("TEMP")}" }
-        appLogger.i { "USERPROFILE env = ${System.getenv("USERPROFILE")}" }
-        appLogger.i { "dataDir = ${AppInfo.dataDir}" }
-        appLogger.i { "logDir = ${AppInfo.definedPaths.logDir}" }
-        // Check canWrite on java.io.tmpdir
-        val tmpDir = java.io.File(System.getProperty("java.io.tmpdir"))
-        appLogger.i { "DIAGNOSTIC: File(tmpdir).exists() = ${tmpDir.exists()}" }
-        appLogger.i { "DIAGNOSTIC: File(tmpdir).isDirectory() = ${tmpDir.isDirectory()}" }
-        appLogger.i { "DIAGNOSTIC: File(tmpdir).canWrite() = ${tmpDir.canWrite()}" }
-        appLogger.i { "DIAGNOSTIC: File(tmpdir).canRead() = ${tmpDir.canRead()}" }
-        appLogger.i { "DIAGNOSTIC: File(tmpdir).canExecute() = ${tmpDir.canExecute()}" }
-        appLogger.i { "=== END DIAGNOSTIC ===" }
         if (appArguments.version) {
             dispatchVersionAndExit()
         }

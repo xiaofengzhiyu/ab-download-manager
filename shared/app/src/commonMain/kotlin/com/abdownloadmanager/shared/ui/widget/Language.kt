@@ -9,7 +9,6 @@ import com.abdownloadmanager.shared.util.ui.LocalTitleBarDirection
 import ir.amirab.util.compose.localizationmanager.LanguageManager
 import ir.amirab.util.compose.localizationmanager.LocalLanguageManager
 import ir.amirab.util.compose.localizationmanager.LocaleLanguageDirection
-import ir.amirab.util.logger.appLogger
 
 @Composable
 fun ProvideLanguageManager(
@@ -22,7 +21,6 @@ fun ProvideLanguageManager(
     } else {
         LayoutDirection.Ltr
     }
-    appLogger.i { "DIAGNOSTIC: ProvideLanguageManager providing LocalTitleBarDirection=Ltr, languageDirection=$languageDirection" }
     CompositionLocalProvider(
         LocalLanguageManager provides languageManager,
         LocalLayoutDirection provides languageDirection,

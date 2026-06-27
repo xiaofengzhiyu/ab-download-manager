@@ -7,7 +7,6 @@ import androidx.compose.ui.graphics.toComposeImageBitmap
 import com.abdownloadmanager.shared.util.FileIconProvider
 import com.abdownloadmanager.shared.util.ui.IMyIcons
 import ir.amirab.util.compose.IconSource
-import ir.amirab.util.logger.appLogger
 import java.awt.image.BufferedImage
 import java.io.File
 import javax.swing.filechooser.FileSystemView
@@ -33,16 +32,11 @@ class OSFileIconProvider(
                 val h = 24
                 return runCatching {
                     val fileSystemView = FileSystemView.getFileSystemView()
-                    appLogger.i { "DIAGNOSTIC: OSFileIconProvider creating temp file for extension='.$extension'" }
-                    appLogger.i { "DIAGNOSTIC: java.io.tmpdir=${System.getProperty("java.io.tmpdir")}" }
                     val file = File.createTempFile("file", "file.$extension")
-                    appLogger.i { "DIAGNOSTIC: Temp file created at: ${file.absolutePath}" }
                     val icon = fileSystemView.getSystemIcon(file, w, h)
                     bufferedImageToImageBitmap(iconToImage(icon))
                 }.onSuccess {
                     registeredIcons[extension] = it
-                }.onFailure { error ->
-                    appLogger.e(error) { "DIAGNOSTIC: OSFileIconProvider failed to create temp file for extension='.$extension'" }
                 }.getOrNull()
             }
         }
