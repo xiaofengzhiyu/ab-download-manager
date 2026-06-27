@@ -1,0 +1,78 @@
+name: Build Release Package
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JBR
+        uses: actions/setup-java@v4
+        with:
+          distribution: "jetbrains"
+          java-package: "jdk"
+          java-version: "25"
+          check-latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache Gradle Dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: windows-gradle-release
+          enableCrossOsArchive: true
+
+      - name: Skip Android build
+        shell: bash
+        run: |
+          echo "SKIP_ANDROID_BUILD=true" >> $GITHUB_ENV
+
+      - name: Initialize Gradle
+        shell: bash
+        run: |
+          ./gradlew
+
+      - name: Build release distributable
+        shell: bash
+        run: |
+          ./gradlew createReleaseFolderForCi
+
+      - name: Stop Gradle
+        shell: bash
+        run: |
+          ./gradlew -stop
+
+      - name: Get version
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(grep 'val projectVersion' gradle.properties | cut -d'"' -f2)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}-snapshot
+          name: "Snapshot ${{ steps.version.outputs.version }}"
+          prerelease: true
+          draft: false
+          files: |
+            build/ci-release/binaries/*
+          body: |
+            ## Snapshot Release
+
+            This is an automated snapshot build for testing.
+
+            **Version:** ${{ steps.version.outputs.version }}
+            **Commit:** ${{ github.sha }}
+            **Date:** ${{ github.event.head_commit.timestamp }}

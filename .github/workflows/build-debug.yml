@@ -47,19 +47,11 @@ jobs:
         run: |
           ./gradlew :desktop:app:createReleaseDistributable
 
-      - name: Get version
-        id: version
-        shell: bash
-        run: |
-          VERSION=$(./gradlew :shared:app:printAppVersion -q 2>/dev/null || echo "dev")
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
       - name: Create zip archive
         shell: bash
         run: |
           cd desktop/app/build/compose/binaries/main-release/app
           ls -la
-          # The distributable folder name
           APP_DIR=$(ls -d */ 2>/dev/null | head -1 | sed 's/\/$//')
           echo "App directory: $APP_DIR"
           7z a -tzip "${{ github.workspace }}/ABDownloadManager-debug-windows.zip" "$APP_DIR"
