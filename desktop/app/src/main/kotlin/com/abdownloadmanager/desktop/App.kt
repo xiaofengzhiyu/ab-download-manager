@@ -78,12 +78,20 @@ fun main(args: Array<String>) {
         AppArguments.init(args)
         AppProperties.boot()
         val appArguments = AppArguments.get()
+        // TODO: Remove forced logging after debugging TEMP/TitleBarDirection issues
         AppLogger.init(
-            writeToConsole = false,
-            logFilePath = AppInfo.definedPaths.logDir.takeIf {
-                AppInfo.isInDebugMode()
-            },
+            writeToConsole = true,
+            logFilePath = AppInfo.definedPaths.logDir,
         )
+        // Diagnostic: print TEMP-related info at startup
+        appLogger.i { "=== DIAGNOSTIC: Environment Variables ===" }
+        appLogger.i { "java.io.tmpdir = ${System.getProperty("java.io.tmpdir")}" }
+        appLogger.i { "TMP env = ${System.getenv("TMP")}" }
+        appLogger.i { "TEMP env = ${System.getenv("TEMP")}" }
+        appLogger.i { "USERPROFILE env = ${System.getenv("USERPROFILE")}" }
+        appLogger.i { "dataDir = ${AppInfo.dataDir}" }
+        appLogger.i { "logDir = ${AppInfo.definedPaths.logDir}" }
+        appLogger.i { "=== END DIAGNOSTIC ===" }
         if (appArguments.version) {
             dispatchVersionAndExit()
         }

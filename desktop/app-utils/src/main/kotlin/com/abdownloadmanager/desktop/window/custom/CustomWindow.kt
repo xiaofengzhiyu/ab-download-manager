@@ -36,6 +36,7 @@ import com.abdownloadmanager.shared.util.ResponsiveBox
 import com.abdownloadmanager.shared.util.ui.WithTitleBarDirection
 import com.abdownloadmanager.shared.util.ui.icon.MyIcons
 import com.abdownloadmanager.shared.util.ui.myColors
+import ir.amirab.util.logger.appLogger
 import com.abdownloadmanager.shared.util.ui.theme.LocalUiScale
 import com.abdownloadmanager.shared.util.ui.theme.UiScaledContent
 import com.jetbrains.JBR
