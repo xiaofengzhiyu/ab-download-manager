@@ -97,6 +97,13 @@ fun main(args: Array<String>) {
         appLogger.i { "USERPROFILE env = ${System.getenv("USERPROFILE")}" }
         appLogger.i { "dataDir = ${AppInfo.dataDir}" }
         appLogger.i { "logDir = ${AppInfo.definedPaths.logDir}" }
+        // Check canWrite on java.io.tmpdir
+        val tmpDir = java.io.File(System.getProperty("java.io.tmpdir"))
+        appLogger.i { "DIAGNOSTIC: File(tmpdir).exists() = ${tmpDir.exists()}" }
+        appLogger.i { "DIAGNOSTIC: File(tmpdir).isDirectory() = ${tmpDir.isDirectory()}" }
+        appLogger.i { "DIAGNOSTIC: File(tmpdir).canWrite() = ${tmpDir.canWrite()}" }
+        appLogger.i { "DIAGNOSTIC: File(tmpdir).canRead() = ${tmpDir.canRead()}" }
+        appLogger.i { "DIAGNOSTIC: File(tmpdir).canExecute() = ${tmpDir.canExecute()}" }
         appLogger.i { "=== END DIAGNOSTIC ===" }
         if (appArguments.version) {
             dispatchVersionAndExit()
